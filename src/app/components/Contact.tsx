@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import { FiMail, FiMapPin, FiSend, FiGithub, FiLinkedin, FiPhone } from "react-icons/fi";
 
 const contactInfo = [
-    { icon: <FiMail />, label: "Email", value: "samio.hasan@example.com", href: "mailto:samiohasan6@gmail.com" },
+    { icon: <FiMail />, label: "Email", value: "samiohasan6@gmail.com", href: "mailto:samiohasan6@gmail.com" },
     { icon: <FiMapPin />, label: "Location", value: "Dhaka, Bangladesh", href: "https://www.google.com/maps/place/House-47,Road-07+Nikunja-01/@23.7733572,90.3647715,12z/data=!4m10!1m2!2m1!1sNikunja-02,Road:-15,House:-13!3m6!1s0x3755c717b60dfb2f:0xe49d4dc8a4bbb6ce!8m2!3d23.8327685!4d90.4171918!15sCh1OaWt1bmphLTAyLFJvYWQ6LTE1LEhvdXNlOi0xM1ojIiFuaWt1bmphIDAyIHJvYWQgOi0gMTUgaG91c2UgOi0gMTOSARBjb3Jwb3JhdGVfb2ZmaWNlmgEkQ2hkRFNVaE5NRzluUzBWSlEwRm5TVVExYjB4NWJUbDNSUkFC4AEA-gEECAAQHw!16s%2Fg%2F11kbbydwrl?entry=ttu&g_ep=EgoyMDI2MDMxMC4wIKXMDSoASAFQAw%3D%3D" },
     { icon: <FiPhone />, label: "Available for", value: "Collabration & Full-time", href: "#" },
 ];
@@ -13,6 +13,52 @@ const contactInfo = [
 export default function Contact() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+    });
+
+    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus("loading");
+        setErrorMessage("");
+
+        try {
+            const response = await fetch("/api/contact", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setStatus("success");
+                setFormData({ name: "", email: "", subject: "", message: "" });
+                setTimeout(() => setStatus("idle"), 5000);
+            } else {
+                setStatus("error");
+                setErrorMessage(result.error || "Something went wrong. Please try again.");
+            }
+        } catch (error) {
+            console.error("Submission error:", error);
+            setStatus("error");
+            setErrorMessage("Failed to send message. Please check your connection.");
+        }
+    };
 
     return (
         <section id="contact" className="section" style={{ position: "relative", zIndex: 1 }}>
@@ -129,13 +175,17 @@ export default function Contact() {
                         transition={{ duration: 0.6, delay: 0.4 }}
                         className="card"
                         style={{ padding: "36px" }}
-                        onSubmit={(e) => e.preventDefault()}
+                        onSubmit={handleSubmit}
                     >
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }} className="form-row">
                             <div>
                                 <label style={{ display: "block", fontSize: "0.78rem", color: "#555", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1.5px" }}>Name</label>
                                 <input
                                     type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
                                     placeholder="Your name"
                                     style={{
                                         width: "100%",
@@ -157,6 +207,10 @@ export default function Contact() {
                                 <label style={{ display: "block", fontSize: "0.78rem", color: "#555", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1.5px" }}>Email</label>
                                 <input
                                     type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
                                     placeholder="your@email.com"
                                     style={{
                                         width: "100%",
@@ -180,6 +234,9 @@ export default function Contact() {
                             <label style={{ display: "block", fontSize: "0.78rem", color: "#555", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1.5px" }}>Subject</label>
                             <input
                                 type="text"
+                                name="subject"
+                                value={formData.subject}
+                                onChange={handleChange}
                                 placeholder="Project Collaboration"
                                 style={{
                                     width: "100%",
@@ -201,6 +258,10 @@ export default function Contact() {
                         <div style={{ marginBottom: "24px" }}>
                             <label style={{ display: "block", fontSize: "0.78rem", color: "#555", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1.5px" }}>Message</label>
                             <textarea
+                                name="message"
+                                value={formData.message}
+                                onChange={handleChange}
+                                required
                                 rows={5}
                                 placeholder="Tell me about your project..."
                                 style={{
@@ -224,12 +285,33 @@ export default function Contact() {
                         <motion.button
                             type="submit"
                             className="btn-primary"
-                            style={{ width: "100%", justifyContent: "center", padding: "14px" }}
+                            disabled={status === "loading"}
+                            style={{ width: "100%", justifyContent: "center", padding: "14px", opacity: status === "loading" ? 0.7 : 1 }}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
                         >
-                            Send Message <FiSend />
+                            {status === "loading" ? "Sending..." : "Send Message"} <FiSend />
                         </motion.button>
+
+                        {status === "success" && (
+                            <motion.p
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                style={{ color: "#4ade80", fontSize: "0.85rem", marginTop: "12px", textAlign: "center" }}
+                            >
+                                Message sent successfully! I'll get back to you soon.
+                            </motion.p>
+                        )}
+
+                        {status === "error" && (
+                            <motion.p
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                style={{ color: "#f87171", fontSize: "0.85rem", marginTop: "12px", textAlign: "center" }}
+                            >
+                                {errorMessage}
+                            </motion.p>
+                        )}
                     </motion.form>
                 </div>
             </div>
