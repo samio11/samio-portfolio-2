@@ -152,7 +152,7 @@ export default function Hero() {
                         transition={{ delay: 0.8 }}
                         style={{ color: "#777", fontSize: "1.1rem", lineHeight: 1.8, marginBottom: "48px", maxWidth: "500px" }}
                     >
-                        CS student at AIUB building high-performance web applications.
+                        CSE student at AIUB building high-performance web applications.
                         I specialize in the Full Stack ecosystem, Next.js, and cloud-ready architectures.
                     </motion.p>
 
